@@ -1,0 +1,45 @@
+k = 100;
+nseg = 1000;
+in2 = rand(k,nseg);
+g = zeros(size(in2));
+h = zeros(size(in2));
+g(1,:) = in2(1,:);
+h(k,:) = in2(k,:);
+
+% 1
+disp('1');
+tic
+for ii = 2:k
+    g(ii,:) = bsxfun(@min,g(ii-1,:),in2(ii,:));
+    h(k-ii+1,:) = bsxfun(@min,h(k-ii+2,:),in2(k-ii+1,:));
+end
+toc
+g1 = g;
+h1 = h;
+
+% 2
+disp('2');
+tic
+for ii = 2:k
+    for jj = 1:nseg
+        g(ii,jj) = min(g(ii-1,jj),in2(ii,jj));
+        h(k-ii+1,jj) = min(h(k-ii+2,jj),in2(k-ii+1,jj));
+    end
+end
+toc
+g2 = g;
+h2 = h;
+
+% 3
+disp('3');
+tic
+
+for jj = 1:nseg
+    for ii = 2:k
+        g(ii,jj) = min(g(ii-1,jj),in2(ii,jj));
+        h(k-ii+1,jj) = min(h(k-ii+2,jj),in2(k-ii+1,jj));
+    end
+end
+toc
+g3 = g;
+h3 = h;

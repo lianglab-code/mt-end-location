@@ -1,0 +1,39 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+
+\DeclareMathOperator{\Tr}{Tr}
+%%%\DeclareMathOperator{\diag}{diag}
+\DeclarePairedDelimiter{\diagfences}{(}{)}
+\newcommand{\diag}{\operatorname{diag}\diagfences}
+
+\begin{document}
+ 
+\title{Some matrix identities}
+\author{jerviedog}
+\maketitle
+
+
+\begin{equation}
+\begin{pmatrix}
+b_1b_1 & \dots & b_1b_m \\
+\vdots & \ddots & \vdots \\
+b_mb_1 & \dots & b_mb_m
+\end{pmatrix} \\
+= 
+\begin{pmatrix}
+b_1 & \dots & 0 \\
+\vdots & \ddots & \vdots \\
+0 & \dots & b_m
+\end{pmatrix}
+\begin{pmatrix}
+b_1 & \dots & b_m \\
+\vdots & \ddots & \vdots \\
+b_1 & \dots & b_m
+\end{pmatrix}
+\end{equation}
+
+
+\end{document}

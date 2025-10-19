@@ -1,0 +1,29 @@
+#+title: Notes on implementing SDM curve fitting algorithm
+
+* references:
+** Fitting b-spline curves to point clouds by curvature-based squared distance minimization
+** Implementation of fitting b-spline curves to point clouds by squared distance minimization (Yuri Pekelny)
+** thesis: Optimization and differential geometry for geometric modeling (Yang LIU)
+
+
+* notes:
+** $e_{SD}$
+** b-spline inintialization
+*** generation of closed b-spline
+*** TODO choice of the proper parametrization scheme
+*** initialization of the control points from the given point cloud
+** optimization
+*** calculation of corresponding foot points
+**** preprocessing, the calculation of the coarse grid and normal of the coarse points on the spline
+**** query
+
+* limits:
+** the representation of the spatial curve in the current implementation is the uniform b-spline, which is appropriate for a curve with more or less uniform curvature
+
+* file list:
+** misc/closest_dist_brute: calculate the closest distance between points in two point sets
+** sdm/gen_init_bs: generate the initial closed ellipse for a given point set
+** sdm/gen_coarse_grid: generate a coarse grid for a given point set
+
+* todo:
+** voronoi / delaunay methods to choose coarse centers

@@ -1,0 +1,9 @@
+function mode_roir(obj)
+    mode_reset(obj);
+    obj.cur_mode = 'roir';
+    set(obj.h_fig, ...
+        'WindowButtonDownFcn', @obj.wbdcb, ...
+        'WindowButtonMotionFcn', '', ...
+        'WindowButtonUpfcn', '');
+    set(obj.h_fig,'Pointer','crosshair');
+end

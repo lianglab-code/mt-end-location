@@ -1,0 +1,14 @@
+function kimg = kymograph(imgs,p1,p2,varargin)
+%% KYMOGRAPH plot the kymograph along the line segment from p1 to
+% p2.
+% kimg = kymograph(imgs,p1,p2,varargin)
+
+% INPUT:
+% imgs: images
+% p1: [x1;y1]
+% p2: [x2;y2]
+% n: number of points along the line segment, default 100
+% w: width of the line segment, default 0
+
+% OUTPUT:
+% kimg: the kymograph

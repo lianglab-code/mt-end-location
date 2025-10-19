@@ -1,0 +1,315 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{relsize}
+
+\newcommand{\bmmp}{\bm{\mathcal{P}}} % curve
+\newcommand{\splinept}{\sum_j{Q_j(t)\bm{P}_j}}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\vP}{\bm{\mathrm{P}}} % control point vector
+\newcommand{\vPT}{\bm{\mathrm{P}}^{\intercal}}
+\newcommand{\vQ}{\bm{\mathrm{Q}}} % cardinal basis vector
+\newcommand{\vQT}{\bm{\mathrm{Q}}^{\intercal}} % cardinal basis vector
+\newcommand{\mM}{\mathbf{M}} % matrix
+\newcommand{\mMT}{\mathbf{M}^{\intercal}} % matrix
+
+%% open derivative matrix left
+\newcommand{\odml}{\begin{pmatrix}\bm{I_m},\bm{0}\end{pmatrix}}
+%% open derivative matrix right
+\newcommand{\odmr}{\begin{pmatrix}\bm{0},\bm{I_m}\end{pmatrix}}
+%% closed derivative matrix left
+\newcommand{\cdml}{\begin{pmatrix}\bm{I_m},\bm{e_1},\dots,\bm{e_{k-1}}\end{pmatrix}}
+%% closed derivative matrix right
+\newcommand{\cdmr}{\begin{pmatrix}\bm{e_m},\bm{I_m},\bm{e_1},\dots,\bm{e_{k-2}}\end{pmatrix}}
+
+%% open derivative derivative matrix left
+\newcommand{\oddml}{\begin{pmatrix}\bm{I_m},\bm{0},\bm{0}\end{pmatrix}}
+%% open derivative derivative matrix middle
+\newcommand{\oddmm}{\begin{pmatrix}\bm{0},\bm{I_m},\bm{0}\end{pmatrix}}
+%% open derivative derivative matrix right
+\newcommand{\oddmr}{\begin{pmatrix}\bm{0},\bm{0},\bm{I_m}\end{pmatrix}}
+
+%% closed derivative derivative matrix left
+\newcommand{\cddml}{\begin{pmatrix}\bm{I_m},\bm{e_1},\dots,\bm{e_{k-1}}\end{pmatrix}}
+%% closed derivative derivative matrix middle
+\newcommand{\cddmm}{\begin{pmatrix}\bm{e_m},\bm{I_m},\bm{e_1},\dots,\bm{e_{k-2}}\end{pmatrix}}
+%% closed derivative derivative matrix right
+\newcommand{\cddmr}{\begin{pmatrix}\bm{e_{m-1}},\bm{e_m},\bm{I_m},\bm{e_1},\dots,\bm{e_{k-3}}\end{pmatrix}}
+
+\begin{document}
+ 
+\title{Regularization of Cardinal B-Spline Curves}
+\author{jerviedog}
+\maketitle
+
+\section{Introduction}
+This note is about the calculation of the regularization of cardinal b-spline curves involved in the curve fitting problems. It seems convenient to use the vector/matrix representation other than the summation representation. The vector/matrix representation is also more clear, especially when wrap-around operation is needed. Alas, I have made a mistake when using summation representation.
+
+\section{The regularization terms}
+The curve is represented by cardinal b-spline of order $k$:
+\[
+\bmmp=\splinept.
+\]
+where $\bm{P}_j$ are the control points, and $Q^k_j$ are the cardinal spline basis of order k. The support of $Q^k_j$ is $\left[j-1,j-1+k\right)$.
+
+For the simplicity, I consider the 1-dimensional case so I can use vector/matrix representation in a more clear way, and the order superscript $k$ is dropped (order $k$ is assumed unless specified):
+\[
+\bmmp=\vPT\vQ,
+\]
+where
+$\vP = [P_1,P_2,...,P_m]^\intercal$ are control point vector, and $\vQ = [Q_1(t),Q_2(t),...,Q_m(t)]^\intercal$ are the cardinal basis vector. The vector/matrix expression for the curve, its first and second derivatives can be found in \ref{subsec:diff_card}.
+
+The regularization terms are $F_1$ and $F_2$:
+\[
+\begin{split}
+F_1 &= \half \int {\|\bmmp^\prime(t)\|^2 }dt \\
+&= \half \int {\| \vPT \mM_1 \vQ^{k-1} \|^2} dt \\
+& = \half \vPT \mM_1 \Bigl(\int{\vQ\vQT}dt\Bigr) \mMT_1 \vP,
+\end{split}
+\]
+and
+\[
+\begin{split}
+F_2 &= \half \int{\|\bmmp^{\prime\prime}(t)\|^2}dt \\
+&= \half \int {\| \vPT \mM_2 \vQ^{k-2} \|^2} dt \\
+& = \half \vPT \mM_2 \Bigl(\int{\vQ\vQT}dt\Bigr) \mMT_2 \vP.
+\end{split}
+\]
+
+Now the derivatives of $F_1$ and $F_2$ with respect to the control points $\vP$ can be obtained easily. The extension to 2-dimensional control points and further discussion of the usage of B-spline in image processing can be found in chapter 3 of Blake and Isard's book ``Active Contours''.
+
+\section{Appendix}
+Here are some relations that would be used in the text.
+\subsection{Cardinal splines up to order 4}
+\[
+\begin{split}
+Q_1 &= 
+\begin{cases}
+1 & 0 \leq x < 1\\
+0 & otherwise
+\end{cases}, \\
+Q_2 &= 
+\begin{cases}
+x & 0 \leq x < 1 \\
+-(x-1)+1 & 1 \leq x < 2\\
+0 & otherwise
+\end{cases}, \\
+Q_3 &= 
+\begin{cases}
+\frac{1}{2}x^2 & 0 \leq x < 1 \\
+-(x-1)^2+(x-1)+\frac{1}{2} & 1 \leq x < 2\\
+\frac{1}{2}(x-2)^2-(x-2)+\frac{1}{2} & 2 \leq x < 3\\
+0 & otherwise
+\end{cases}, \\
+Q_4 &= 
+\begin{cases}
+\frac{1}{6}x^3 & 0 \leq x < 1 \\
+-\frac{1}{2}(x-1)^3+\frac{1}{2}(x-1)^2+\frac{1}{2}(x-1)+\frac{1}{6} & 1 \leq x < 2\\
+\frac{1}{2}(x-2)^3-(x-2)^2+\frac{2}{3} & 2 \leq x < 3\\
+-\frac{1}{6}(x-3)^3+\frac{1}{2}(x-3)^2-\frac{1}{2}(x-3)+\frac{1}{6} & 3 \leq x < 4\\
+0 & otherwise
+\end{cases}.
+\end{split}
+\]
+
+\subsection{Differentiation of cardinal spline basis}
+\[
+Q^{\prime}_{i,k} = Q_{i,k-1} - Q_{i+1,k-1}.
+\]
+
+\subsection{Hodograph}
+The general way to construct the hodograph of a curve is to use the general differentiation method of the b-spline, c.f., page 115 of de Boor's book. Note that the evaluation range of the hodograph is the same as the original curve, e.g., $[t_k,\dots,t_{m+1}]$, which is different from the range of the hodograph constructed by the method below.
+We can also make use of the properties of the cardinal splines: We compute the control points of the corresponding hodograph and construct the hodograph with cardinal spline of order $k-1$. 
+\begin{itemize}
+\item open curve:
+Suppose that the curve is represented by $k$-order cardinal b-spline curve with $m$ control points. The knot sequence is $1, \dots, m+k$. The evaluation span is $[k,m+1]$. The curve is 
+\[
+\begin{split}
+\bmmp&=\vPT\vQ^k_m \\
+&=
+\begin{pmatrix}
+P_1 \\
+P_2 \\
+\vdots \\
+P_m
+\end{pmatrix}
+\begin{pmatrix}
+Q^k_1,\dots,Q^k_m
+\end{pmatrix}.
+\end{split}
+\]
+
+The hodograph is a curve represented by cardinal splines of order $k-1$:
+\[
+\bmmp^{\prime}=\vP^{\prime\intercal}\vQ^{k-1}_{m+1},
+\]
+where 
+\[
+\vP^{\prime}=[P_1-0,P_2-P_1,\dots,P_m-P_{m-1},-P_m]^\intercal
+\]
+and
+\[
+\vQ^{k-1}_{m+1}=[Q^{k-1}_1,\dots,Q^{k-1}_{m+1}]^\intercal.
+\]
+Or in a more succint form:
+\[
+\bmmp^{\prime} = \vPT \Bigl[\odml - \odmr\Bigr] \vQ^{k-1}_{m+1}.
+\]
+The evaluation span is $[k-1,m+2]$.
+\item closed curve:
+The scenario is similar to that of open curve. Suppose that the curve is represented by $k$-order cardinal b-spline curve with $m$ control points. Besides these $m$ independent control points, there are $k-1$ wrapped-around control points. As a result, there are $m+k-1$ control points. The knot sequence is thus $1, \dots, (m+k-1)+k$. The evaluation span is $[k,(m+k-1)+1]$. The curve is
+\[
+\begin{split}
+\bmmp&=\vPT\vQ^k_{m+k-1} \\
+&=
+\begin{pmatrix}
+P_1 \\
+P_2 \\
+\vdots \\
+P_m \\
+P_1 \\
+\vdots \\
+P_{k-1}
+\end{pmatrix}
+\begin{pmatrix}
+Q^k_1,\dots,Q^k_{m+k-1}
+\end{pmatrix} \\
+&= \vPT
+\cdml
+\vQ^k_{m+k-1}
+\end{split}
+\]
+The corresponding hodograph is:
+\[
+\bmmp^{\prime}=\vP^{\prime\intercal}\vQ^{k-1}_{m+k-1},
+\]
+where
+\[
+\vP^\prime=[P_1-P_m,P_2-P_1,\dots,P_m-P_{m-1},P_1-P_m,P_2-P_1,\dots,P_{k-1}-P_{k-2}]^\intercal
+\]
+and
+\[
+\vQ^{k-1}_{m+k-1}=[Q^{k-1}_1,\dots,Q^{k-1}_{m+k+1}]^\intercal.
+\]
+Or in a more succint form:
+\[
+\bmmp^\prime = \vPT \biggl[ \cdml - \cdmr \biggr] \vQ^{k-1}_{m+k-1}.
+\]
+The evaluation span is $[k-1,(m+k-1)+1]$.
+\end{itemize}
+
+\subsection{Differentiation of cardinal spline curves}\label{subsec:diff_card}
+The above discussion can be put in this summary:
+\[
+\vP = 
+\begin{pmatrix}
+P_1,\\
+P_2,\\
+\vdots,\\
+P_m
+\end{pmatrix}.
+\]
+The curve itself:
+\[
+\begin{split}
+\bmmp_{open} = \bmmp_o &= \vPT\vQ^k_m ,\\
+\bmmp_{closed} = \bmmp_c &= \vPT \cdml \vQ^k_{m+k-1} \\
+&= \vPT \mM_{0c} \vQ^k_{m+k-1}.
+\end{split}
+\]
+
+First derivative:
+\[
+\begin{split}
+\bmmp_o^\prime &= \vPT \biggl[ \odml - \odmr \biggr] \vQ^{k-1}_{m+1} \\
+&= \vPT \mM_{1o} \vQ^{k-1}_{m+1}, \\
+\bmmp_c^\prime &= \vPT \biggl[ \cdml - \cdmr \biggr] \vQ^{k-1}_{m+k-1} \\
+&= \vPT \mM_{1c} \vQ^{k-1}_{m+k-1}.
+\end{split}
+\]
+
+Second derivative \label{second_derivative}:
+\[
+\begin{split}
+\bmmp_o^{\prime\prime} &= \vPT \biggl\{
+\biggl[ \oddml - \oddmm \biggr] 
+-
+\biggl[ \oddmm - \oddmr \biggr]
+\biggr\}
+\vQ^{k-2}_{m+2} \\
+&= \vPT \mM_{2o} 
+\vQ^{k-2}_{m+2},
+\\
+\bmmp_c^{\prime\prime} &= \vPT \biggl\{
+\biggl[ \cddml - \cddmm \biggr] \\
+&\mathrel{\phantom{=}}\quad\, -
+\biggl[ \cddmm - \cddmr \biggr] \\
+&\mathrel{\phantom{=}}\quad\quad \biggr\} \vQ^{k-2}_{m+k-1} \\
+&= \vPT \mM_{2c} \vQ^{k-2}_{m+k-1}.
+\end{split}
+\]
+The evaluation range can be inferred by the superscript and subscript of $\vQ^k_m$: $[k,m+k-k+1]$, where $m$ is the number of control points, $m+k$ is the number of knots in the knot sequence, and $k$ is order.
+
+\subsection{Others}
+Reorganization of vector of this form $[P_1, \dots, P_m, 0]$ :
+\[
+\begin{pmatrix}
+P_1 \\
+\vdots \\
+P_m \\
+0
+\end{pmatrix}
+=
+\begin{pmatrix}
+1, 0, \dots, 0 \\
+0, 1, \dots, 0 \\
+\vdots, \vdots, \ddots, \vdots \\
+0, 0, \dots, 1 \\
+0, 0, \dots, 0
+\end{pmatrix}
+\begin{pmatrix}
+P_1 \\
+\vdots \\
+P_m
+\end{pmatrix}
+=
+\begin{pmatrix}
+\bm{I_m} \\
+\bm{0}
+\end{pmatrix}
+\vP,
+\]
+and
+\[
+\begin{pmatrix}
+P_1 \\
+\vdots \\
+P_m \\
+P_1
+\end{pmatrix}
+=
+\begin{pmatrix}
+1, 0, \dots, 0 \\
+0, 1, \dots, 0 \\
+\vdots, \vdots, \ddots, \vdots \\
+0, 0, \dots, 1 \\
+1, 0, \dots, 0
+\end{pmatrix}
+\begin{pmatrix}
+P_1 \\
+\vdots \\
+P_m
+\end{pmatrix}
+=
+\begin{pmatrix}
+\bm{I_m} \\
+\bm{e_1^{\intercal}}
+\end{pmatrix}
+\vP.
+\]
+
+\end{document}

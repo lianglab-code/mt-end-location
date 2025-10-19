@@ -1,0 +1,11 @@
+imgs = tif_img_reader('/home/image/proj/neuron_tracing/data/mutA1.tif');
+img = imgs(:,:,40);
+[img_h, img_w, num_frames] = size(imgs);
+
+img2 = img;
+x = 1:img_w;
+for ii = 1:img_h
+    y = img2(ii,:);
+    bg = bg_est_ss(x,y,3);
+    img2(ii,:) = y - bg;
+end

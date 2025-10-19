@@ -1,0 +1,59 @@
+#+title: Specifications
+
+* What are the principles of designing an effective GUI?
+** 1. the interface (input-output-visualization)
+** 2. the inner representation (data)
+** 3. the algorithms
+
+* COMMON IMAGE MANIPULATION
+** zoom in/out
+** pan
+** resotration to normal/initial status
+** next/prev frame (TODO: multi-channel, multi-slice images)
+** image enhancement
+
+* COMMON ROI MANIPULATION
+** selection
+** creation
+** removal
+** showing/hiding/highlighting
+
+* COMMON OBJECT MANIPULATION
+** selection
+** creation
+** removal
+** showing/hiding/highlighting
+
+* TODO EXTENSION/MODULAR DESIGN (how)
+** ability to load other modules, e.g., spline
+
+* FILE LIST
+** deact_other_pbutt.m: function calling pbutt_n_deact.m
+** general_gui.m: main program
+** helper_add_pbutt.m: helper function adding pbutt
+** init_canvas_gui.m: plotting image on canvas
+** init_global_param.m: global parameter initialization
+** init_toolbar_gui.m: add pbutt functionalities
+** load_icon.m: load icon image for pbutt
+** n_callback.m: callback functions
+** pbutt_n_callback.m: pushbutton callback
+** pbutt_n_deact.m: deactivation function when pbutt changed
+
+* NAMING CONVENTION
+** global param: upper-cased, most of them are constants
+
+* KEYBOARD SHORTCUT
+** +/-
+** left/right arrow
+
+* EXTENSION
+** extension is allowed to be made, e.g., I want to add drawing functionality
+** it is required that the extension do not interfere the origin functionality
+** I also want to have a design that the original function(buttons) will not interfere any extention
+
+* MODULES
+** mod_roi
+
+* PROBLEMS INVOLVED
+** window component layout, automatically
+** a

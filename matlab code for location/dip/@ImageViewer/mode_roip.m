@@ -1,0 +1,9 @@
+function mode_roip(obj)
+    mode_reset(obj);
+    obj.cur_mode = 'roip';
+    set(obj.h_fig, ...
+        'WindowButtonDownFcn', @obj.wbdcb, ...
+        'WindowButtonMotionFcn', '', ...
+        'WindowButtonUpfcn', '');
+    set(obj.h_fig,'Pointer','cross');
+end

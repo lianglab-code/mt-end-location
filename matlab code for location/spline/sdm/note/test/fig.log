@@ -1,0 +1,22 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2015/dev/Debian) (preloaded format=mptopdf 2017.7.23)  23 DEC 2017 19:49
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**\relax fig.1
+ (./fig.1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map})
+[warning: the height is less than 1in] [1] 
+Here is how much of TeX's memory you used:
+ 81 strings out of 496714
+ 586 string characters out of 6201178
+ 4018734 words of memory out of 9003941
+ 1733 multiletter control sequences out of 15000+600000
+ 307 words of font info for 1 font, out of 8000000 for 9000
+ 0 hyphenation exceptions out of 8191
+ 10i,3n,7p,115b,281s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr10.pfb>
+Output written on fig.pdf (1 page, 12514 bytes).
+PDF statistics:
+ 12 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 7 words of extra memory for PDF output out of 10000 (max. 10000000)
+

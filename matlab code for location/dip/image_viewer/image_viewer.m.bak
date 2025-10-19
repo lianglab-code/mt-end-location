@@ -1,0 +1,952 @@
+function image_viewer(imgs,varargin)
+%% IMAGE_VIEWER is an image viewer.
+% image_viewer(imgs,varargin)
+
+% INPUT:
+% imgs: multi-frame single channel images
+% imgroi: point and rect struct, cf, ROI RULES
+
+% It can be used as a prototype or a template for other types of
+% applications which require user interaction.
+
+%% NOTES
+% BASIC FUNCTIONALITIES:
+% b1: scrolling through frames
+% b2: zoom in/out
+% b3: panning
+% b4: roi (rect, point or arrow) add/select/move/delete
+% b5: export roi to base workspace
+% b6: carry out calculation on point/arrow/rect using the images
+    
+% KEYBOARD SHORTCUTS TO SWITCH MODE:
+% b1: mouse middle button (alway active, scroll step adjustable)
+% b2: [+]/[-] zoom figure (always active)
+%   : [=]/[-] zoom axes (always active)
+% b3: [m] pointer 'hand'
+% b4: [p] add point, pointer 'cross'
+%   : [r] add rect, pointer 'crosshair' size non-editable
+%   : [a] add arrwo, pointer 'arrow', editable
+%   : [ctrl+D] delete roi from all frames
+%   : [d] delete roi from current frame
+%   : mouse left button to select and move roi
+% b5: [e]
+% b6: [k] operation: localize the current point at current frame
+%   : [shift-k] operation: re-localize the point at all frames
+%
+% other: [ESC] deactive roi mode
+%      : [uparrow] increase scroll step
+%      : [downarrow] decrease scroll step
+%      : [c] adjust constrast
+    
+% ROI RULES
+% Data Structure:
+% imgroi
+% imgroi.p: Point, 2 * np * num_frames; [x;y]
+% imgroi.a: Arrow, 4*np*num_frames;[x1;y1;x2;y2], p1 points to p2
+% imgroi.r Rect: 4 * nr *num_frames; [x;y;w;h]
+% Add:
+%  If an roi is added, it appears at the same position in all
+%  frams.
+% Move:
+%  Move the position of the roi at current frame; for point, move
+%   action moves the point; for rect, move action moves the whole
+%   rect; for arrow, move action moves the start or stop of the
+%   arrow, which is different from that of rect. The rational
+%   is that the size of the rect should be the same for all frames.
+% Delect:
+%  Rois can be deleted from current frame or from all frames
+
+% EXPERIENCE:
+% use imcontrast to adjust the consrast of the displayed image
+% I learned something about passing/sharing information between GUI
+% 1. If a var is meant to be changed, it should be stored as
+%    appdata; otherwise, it should be passed as parameter.
+%    cur_frame should be appdata, while mag_factor should be passed
+%    as a parameter.
+  
+% EXAMPLE:
+% test_img = tif_img_reader('syl.tif');
+% [img_h,img_w,num_frames] = size(test_img);
+% imgroi2 = struct;
+% imgroi2.p = rand(2,1,num_frames);
+% imgroi2.p(1,1,:) = imgroi2.p(1,1,:)*img_w;
+% imgroi2.p(2,1,:) = imgroi2.p(2,1,:)*img_h;
+% imgroi2.a = rand(4,1,num_frames);
+% imgroi2.a(1,1,:) = imgroi2.p(1,1,:)*img_w;
+% imgroi2.a(2,1,:) = imgroi2.p(2,1,:)*img_h;
+% imgroi2.a(3,1,:) = imgroi2.p(3,1,:)*img_w;
+% imgroi2.a(4,1,:) = imgroi2.p(4,1,:)*img_h;
+% imgroi2.r = zeros(4,1,num_frames);
+% imgroi2.r(1,1,:) = rand(1,1,num_frames)*img_w;
+% imgroi2.r(2,1,:) = rand(1,1,num_frames)*img_h;
+% imgroi2.r(3,1,:) = rand(1,1,num_frames)*img_w/2;
+% imgroi2.r(4,1,:) = rand(1,1,num_frames)*img_h/2;
+% image_viewer(test_img,imgroi2);
+    
+    if length(size(imgs))>3
+        error('only one-channel image is supported');
+        return;
+    end
+
+    %% INITIATION
+    screen_pos = get(0,'ScreenSize');
+    MAX_WIDTH = screen_pos(3);
+    MAX_HEIGHT = screen_pos(4);
+    PM = 'o'; % point marker
+    RM = 'o'; % rect marker
+    PC = 'r'; % point color
+    RC = 'm'; % rect color
+    AC = 'm'; % arrow color
+    PS = 6; % point marker size
+    RS = 6; % rect marker size
+    ALW = 1; % arrow line width
+    AHL = 12; % arrow head length
+    ABL = 2.5*AHL; % arrow body length, used to adjust the Stop point
+    PICK_R = 20; % radius of point select region
+    MAG_FACTOR = 1.5;
+    KYMO_N = 100; % kymograph, number of points along the line
+    KYMO_W = 1; % kymograph, width of the line
+
+    [img_h, img_w, num_frames] = size(imgs);
+    cur_frame = 1;
+    scroll_step = 1;
+
+    % roi structure
+    imgroi = struct;
+    if nargin>1
+        imgroi = varargin{1};
+        if ~isstruct(imgroi)
+            error('imgroi is not a struct');
+            return;
+        end
+        if ~isfield(imgroi,'p')
+            imgroi.p = zeros(2,0,num_frames);
+        else
+            if ~isempty(imgroi.p)
+                if size(imgroi.p,1)~=2 || ...
+                        size(imgroi.p,3)~=num_frames
+                    error('wrong dimension: imgroi.p');
+                    return;
+                end
+            end
+        end
+        if ~isfield(imgroi,'a')
+            imgroi.a = zeros(4,0,num_frames);
+        else
+            if ~isempty(imgroi.a)
+                if size(imgroi.a,1)~=4 || ...
+                        size(imgroi.a,3)~=num_frames
+                    error('wrong dimension: imgroi.a');
+                    return;
+                end
+            end
+        end
+        if ~isfield(imgroi,'r')
+            imgroi.r = zeros(4,0,num_frames);
+        else
+            if ~isempty(imgroi.r)
+                if size(imgroi.r,1)~=4 || ...
+                        size(imgroi.r,3)~=num_frames
+                    error('wrong dimension: imgroi.r');
+                    return;
+                end
+            end
+        end
+    else
+        imgroi.p = zeros(2,0,num_frames);
+        imgroi.a = zeros(4,0,num_frames);
+        imgroi.r = zeros(4,0,num_frames);
+    end
+    % corresponding line struct
+    lineroi = struct;
+    lineroi.p = cell(1,0); % hold line obj
+    lineroi.a = cell(1,0); % hold line obj
+    lineroi.r = cell(1,0); % hold line obj
+
+    % mode indicator
+    % 'general' 'roip' 'roir' 'move_axes' 
+    cur_mode = 'general';
+    active_ind = 0; % used to indicate active line
+
+    % IMAGE FIGURE INIT
+    h_fig = figure( ...
+        'Name', num2str(cur_frame), ...
+        'NumberTitle', 'off', ...
+        'Visible','off', ...
+        'Position',[int16(MAX_WIDTH/2)-img_w ...
+                    int16(MAX_HEIGHT/2)-img_h ...
+                    img_w ...
+                    img_h], ...
+        'Units', 'pixels', ...
+        'Menubar','none', ...
+        'Renderer','painter', ... 
+        'Resize','off');
+    set(h_fig, ...
+        'WindowButtonDownFcn', '', ...
+        'WindowButtonMotionFcn', '', ...
+        'WindowButtonUpfcn', '', ...
+        'WindowScrollWheelFcn',@scwcb, ...
+        'WindowKeyPressFcn', @kbcb);
+
+    % IMAGE DISPLAY INIT
+    h_axes = axes( ...
+        'Parent', h_fig, ...
+        'Units', 'normalized', ...
+        'Position', [0 0 1 1], ...
+        'Color', 'none', ...
+        'TickDirMode','manual', ...
+        'userdata', []);
+    set(h_axes, 'xtick', [], 'ytick', []);
+    tmpimg = reshape(imgs(:,:,1),[img_w*img_h,1]);
+    tmplow = quantile(tmpimg,0.1);
+    tmphigh = quantile(tmpimg,0.99);
+    h_img = imshow(imgs(:,:,1), [tmplow tmphigh], ...
+                   'Parent', h_axes, ...
+                   'Border', 'tight');
+    set(h_axes, 'XLimMode','manual',...
+                'YLimMode','manual',...
+                'ZLimMode','manual',...
+                'CLimMode','manual',...
+                'ALimMode','manual')
+    axis(h_axes, 'manual');
+    clear 'tmping' 'tmplow' 'tmphigh';
+
+    % Display the main window
+    % movegui(h_fig, 'southwest');
+    set(h_fig, 'Visible', 'on');
+
+    % Set the appdata
+    % used in scwcb_frames CB
+    setappdata(h_fig,'cur_frame',cur_frame); 
+    setappdata(h_fig,'scroll_step',scroll_step); 
+    setappdata(h_fig,'imgs',imgs);
+    setappdata(h_fig,'h_img',h_img);
+    % remember to clear var if var is put into h_fig as appdata
+    clear 'cur_frame';
+    clear 'scroll_step';
+    custom_pointer = make_pointer(); % for arrow selection
+
+    % plot lines
+    update_point();
+    update_arrow();
+    update_rect();
+
+    % ------------------ GUI ENDS HERE -------------------
+    
+    %% HELPER FUNCTIONS
+    % plot line obj according to imgroi struct
+    function update_point()
+        np = size(imgroi.p,2);
+        cur_frame = getappdata(h_fig,'cur_frame');
+        for ii = 1:np
+            x = imgroi.p(1,ii,cur_frame);
+            y = imgroi.p(2,ii,cur_frame);
+            % invalid point
+            if isnan(x) || isnan(y) || isinf(x) || isinf(y)
+                x = [];
+                y = [];
+            end
+            if numel(lineroi.p)>=ii
+                % line obj exists
+                if isgraphics(lineroi.p{ii},'line')
+                    set(lineroi.p{ii},'XData',x,'YData',y)
+                end
+            else
+                % line obj doesn't exist
+                lineroi.p{ii} = line('XData',x,'YData',y,...
+                                     'Marker',PM,...
+                                     'Color',PC,...
+                                     'MarkerSize',PS,...
+                                     'MarkerFaceColor',PC);
+            end
+        end
+    end
+    
+    function update_arrow()
+        na = size(imgroi.a,2);
+        cur_frame = getappdata(h_fig,'cur_frame');
+        for ii = 1:na
+            x1 = imgroi.a(1,ii,cur_frame);
+            y1 = imgroi.a(2,ii,cur_frame);
+            x2 = imgroi.a(3,ii,cur_frame);
+            y2 = imgroi.a(4,ii,cur_frame);
+            % invalid points
+            if sum(isnan([x1 y1 x2 y2]))>0 || ...
+                    sum(isinf([x1 y1 x2 y2]))>0
+                x1 = [];
+                y1 = [];
+                x2 = [];
+                y2 = [];
+            end
+            if numel(lineroi.a)>=ii
+                % arrow exists
+                if isgraphics(lineroi.a{ii},'patch')
+                    if isnan(x1)
+                        set(lineroi.a{ii},'XData',[],...
+                                          'YData',[]);
+                        % Something inconsistent might happen,
+                        % because the Start and Stop of the
+                        % userdata of the arrow object have not
+                        % been updated.
+                    else
+                        arrow(lineroi.a{ii},...
+                              'Start',[x1 y1],...
+                              'Stop',[x2 y2]);
+                    end
+                end
+            else
+                % arrow doesn't exist
+                if isnan(x1)
+                    lineroi.a{ii} = arrow('Start',[0 0],...
+                                          'Stop',[0 0],...
+                                          'Color',AC,...
+                                          'Width',ALW,...
+                                          'Length',AHL);
+                else
+                    lineroi.a{ii} = arrow('Start',[x1 y1],...
+                                          'Stop',[x2 y2],...
+                                          'Color',AC,...
+                                          'Width',ALW,...
+                                          'Length',AHL);
+                end
+            end
+        end
+    end
+    
+    function update_rect()
+        nr = size(imgroi.r,2);
+        cur_frame = getappdata(h_fig,'cur_frame');
+        for ii = 1:nr
+            x = imgroi.r(1,ii,cur_frame);
+            y = imgroi.r(2,ii,cur_frame);
+            w = imgroi.r(3,ii,cur_frame);
+            h = imgroi.r(4,ii,cur_frame);
+            if sum(isnan([x y w h]))>0 ||...
+                sum(isinf([x y w h]))>0
+                rectx = [];
+                recty = [];
+            end
+            rectx = [x x+w x+w x x];
+            recty = [y y y+h y+h y];
+            if numel(lineroi.r)>=ii
+                if isgraphics(lineroi.r{ii},'line')
+                    set(lineroi.r{ii},'XData',rectx,'YData',recty)
+                end
+            else
+                lineroi.r{ii} = line('XData',rectx,'YData',recty,...
+                                     'Marker',RM,...
+                                     'Color',RC,...
+                                     'MarkerSize',RS);
+            end
+        end
+    end
+    
+    function export_var()
+        assignin('base','imgroi',imgroi);
+    end
+    
+    function mode_reset()
+        if(strcmp(cur_mode,'move_axes'))
+            % because external mode_move func is used, more work is
+            % needed
+            mode_move('off');
+        end
+        cur_mode = 'general';
+        active_ind = 0;
+        set(h_fig, ...
+            'WindowButtonDownFcn', '', ...
+            'WindowButtonMotionFcn', '', ...
+            'WindowButtonUpfcn', '');
+        set(h_fig,'Pointer','arrow');
+    end
+    
+    function mode_move(varargin)
+    % because this helper uses move_axes func, it needs more work
+        if(strcmp(cur_mode,'move_axes'))
+            if(nargin==1 && strcmp(varargin{1},'off'))
+                move_axes(h_axes,'off');
+            end
+            return;
+        else
+            mode_reset();
+            cur_mode = 'move_axes';
+            xylimit = [0.5 img_w+0.5 0.5 img_h+0.5];
+            move_axes(h_axes,xylimit);
+        end
+    end
+    
+    function mode_roip()
+        mode_reset();
+        cur_mode = 'roip';
+        set(h_fig, ...
+            'WindowButtonDownFcn', @wbdcb_line, ...
+            'WindowButtonMotionFcn', '', ...
+            'WindowButtonUpfcn', '');
+        set(h_fig,'Pointer','cross');
+    end
+    
+    function mode_roir()
+        mode_reset();
+        cur_mode = 'roir';
+        set(h_fig, ...
+            'WindowButtonDownFcn', @wbdcb_line, ...
+            'WindowButtonMotionFcn', '', ...
+            'WindowButtonUpfcn', '');
+        set(h_fig,'Pointer','crosshair');
+    end
+    
+    function mode_roia()
+        mode_reset();
+        cur_mode = 'roia';
+        set(h_fig, ...
+            'WindowButtonDownFcn', @wbdcb_line, ...
+            'WindowButtonMotionFcn', '', ...
+            'WindowButtonUpfcn', '');
+        set(h_fig,'Pointer','custom',...
+                  'PointerShapeCData',custom_pointer,...
+                  'PointerShapeHotSpot',[9 9]);
+    end
+
+    %% CALLBACKS
+    function wbdcb_line(h_obj,evt)
+        cur_point = get(h_axes,'CurrentPoint');
+        x = cur_point(1,1);
+        y = cur_point(1,2);
+        % point mode
+        if strcmp(cur_mode,'roip')
+            [d,ind] = calc_closest_point(x,y);
+            if ind>0 && d<PICK_R % pick existing point
+                active_ind = ind;
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'move'},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'move'});
+            else % add new point
+                tmppoint = line('XData',x,...
+                                'YData',y,...
+                                'Marker',PM,...
+                                'Color',PC,...
+                                'MarkerSize',PS,...
+                                'MarkerFaceColor',PC);
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'add',tmppoint},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'add',tmppoint});
+            end
+        elseif strcmp(cur_mode,'roia')
+            [d,ind,arrowend] = calc_closest_arrow(x,y);
+            if ind>0 && d<PICK_R % pick existing arrow
+                active_ind = ind;
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'move',arrowend},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'move',arrowend});
+            else % add new arrow
+                tmparrow = arrow('Start',[x y],...
+                                 'Stop',[x y],...
+                                 'Color',AC,...
+                                 'Width',ALW,...
+                                 'Length',AHL);
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'add',tmparrow},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'add',tmparrow});
+            end
+        % rect mode
+        elseif strcmp(cur_mode,'roir')
+            ind = calc_bounding_rect(x,y);
+            % rect move mode
+            if ind>0
+                active_ind = ind;
+                rectx0 = get(lineroi.r{active_ind},'XData');
+                recty0 = get(lineroi.r{active_ind},'YData');
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'move',x,y,rectx0,recty0},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'move'});
+            % rect add mode
+            else
+                tmprect = line('XData',repmat(x,1,5),...
+                               'YData',repmat(y,1,5),...
+                               'Marker',RM,...
+                               'Color',RC,...
+                               'MarkerSize',RS);
+                set(h_fig,'WindowButtonMotionFcn',...
+                          {@wbmcb_line,'add',x,y,tmprect},...
+                          'WindowButtonUpFcn',...
+                          {@wbucb_line,'add',tmprect});
+            end
+        end
+    end
+    
+    function wbmcb_line(h_obj,evt,varargin)
+        xlim = get(h_axes,'xlim');
+        ylim = get(h_axes,'ylim');
+        cur_point = get(h_axes,'CurrentPoint');
+        x = cur_point(1,1);
+        y = cur_point(1,2);
+        % point mode
+        if strcmp(cur_mode,'roip')
+            point_mode = varargin{1};
+            % point move mode
+            if strcmp(point_mode,'move')
+                if x>xlim(1) && x<xlim(2) && ...
+                        y>ylim(1) && y<ylim(2)
+                    set(lineroi.p{active_ind},...
+                        'XData',x,...
+                        'YData',y);
+                end
+            elseif strcmp(point_mode,'add')
+                tmppoint = varargin{2};
+                if x>xlim(1) && x<xlim(2) && ...
+                        y>ylim(1) && y<ylim(2)
+                    set(tmppoint,...
+                        'XData',x,...
+                        'YData',y);
+                end
+            end
+        % arrow mode, use varargin to distinguish move or add
+        elseif strcmp(cur_mode,'roia')
+            arrow_mode = varargin{1};
+            % rect move
+            if strcmp(arrow_mode,'move')
+                arrowend = varargin{2}; % I should have check
+                                        % arrowend..., is it ''?
+                if x>xlim(1) && x<xlim(2) && ...
+                        y>ylim(1) && y<ylim(2)
+                    arrow(lineroi.a{active_ind},...
+                          arrowend,[x y]);
+                end
+            % rect add
+            elseif strcmp(arrow_mode,'add')
+                tmparrow = varargin{2};
+                if x>xlim(1) && x<xlim(2) && ...
+                        y>ylim(1) && y<ylim(2)
+                    arrow(tmparrow,...
+                          'Stop',[x y]);
+                end
+            end
+        % rect mode, use varargin to distinguish move or add
+        elseif strcmp(cur_mode,'roir')
+            rect_mode = varargin{1};
+            x0 = varargin{2};
+            y0 = varargin{3};
+            % rect move
+            if strcmp(rect_mode,'move')
+                rectx0 = varargin{4};
+                recty0 = varargin{5};
+                if x>xlim(1) && x<xlim(2) && ...
+                        y>ylim(1) && y<ylim(2)
+                    dx=x-x0;
+                    dy=y-y0;
+                    rectx = rectx0+dx;
+                    recty = recty0+dy;
+                    set(lineroi.r{active_ind},...
+                        'XData',rectx,...
+                        'YData',recty);
+                end
+            % rect add
+            elseif strcmp(rect_mode,'add')
+                tmprect = varargin{4};
+                rectx = [x0 x x x0 x0];
+                recty = [y0 y0 y y y0];
+                set(tmprect,...
+                    'XData',rectx,...
+                    'YData',recty);
+            end
+        end
+    end
+
+    function wbucb_line(h_obj,evt,varargin)
+        cur_frame = getappdata(h_fig,'cur_frame');
+        % point mode
+        if strcmp(cur_mode,'roip')
+            point_mode = varargin{1};
+            if strcmp(point_mode,'move')
+                x = get(lineroi.p{active_ind},'XData');
+                y = get(lineroi.p{active_ind},'YData');
+                imgroi.p(:,active_ind,cur_frame) = [x;y];
+            elseif strcmp(point_mode,'add')
+                tmppoint = varargin{2};
+                x = get(tmppoint,'XData');
+                y = get(tmppoint,'YData');
+                delete(tmppoint);
+                add_point(x,y);
+                active_ind = size(imgroi.p,2);
+            end
+        % arrow mode
+        elseif strcmp(cur_mode,'roia')
+            arrow_mode = varargin{1};
+            % arrow move
+            if strcmp(arrow_mode,'move')
+                arrow_ud = get(...
+                    lineroi.a{active_ind}, ...
+                    'UserData');
+                x1 = arrow_ud(1);
+                y1 = arrow_ud(2);
+                x2 = arrow_ud(4);
+                y2 = arrow_ud(5);
+                imgroi.a(:,active_ind,cur_frame) = [x1;y1;x2;y2];
+            % arrow add
+            elseif strcmp(arrow_mode,'add')
+                tmparrow = varargin{2};
+                arrow_ud = get(...
+                    tmparrow, ...
+                    'UserData');
+                x1 = arrow_ud(1);
+                y1 = arrow_ud(2);
+                x2 = arrow_ud(4);
+                y2 = arrow_ud(5);
+                delete(tmparrow);
+                add_arrow(x1,y1,x2,y2);
+                active_ind = size(imgroi.a,2);
+            end
+        % rect mode
+        elseif strcmp(cur_mode,'roir')
+            rect_mode = varargin{1};
+            % rect move
+            if strcmp(rect_mode,'move')
+                rectx = get(lineroi.r{active_ind},'XData');
+                recty = get(lineroi.r{active_ind},'YData');
+                [x,y,w,h] = rect_line2roi(rectx,recty);
+                imgroi.r(:,active_ind,cur_frame) = [x;y;w;h];
+            % rect add
+            elseif strcmp(rect_mode,'add')
+                tmprect = varargin{2};
+                rectx = get(tmprect,'XData');
+                recty = get(tmprect,'YData');
+                delete(tmprect);
+                [x,y,w,h] = rect_line2roi(rectx,recty);
+                add_rect(x,y,w,h);
+                active_ind = size(imgroi.r,2);
+            end
+        end
+        set(h_fig,'WindowButtonMotionFcn','',...
+                  'WindowButtonUpFcn','');
+    end
+    
+    function scwcb(h_obj,evt)
+        scwcb_frames(h_obj,evt);
+        update_point();
+        update_arrow();
+        update_rect();
+    end
+    
+    function kbcb(h_obj,evt)
+        switch lower(evt.Key)
+          case 'escape' % return to general mode
+            mode_reset();
+          case 'add' % zoom in figure
+            zoom_figure(h_fig, MAG_FACTOR);
+          case 'subtract' % zoom out figure
+            zoom_figure(h_fig, 1/MAG_FACTOR);
+          case 'equal' % zoom in axes
+            zoom_axes(h_axes,MAG_FACTOR);
+          case 'hyphen' % zoom out axes
+            zoom_axes(h_axes,1/MAG_FACTOR);
+          case 'uparrow' % increase scroll step
+            scroll_step = getappdata(h_fig,'scroll_step');
+            scroll_step = scroll_step+1;
+            setappdata(h_fig,'scroll_step',scroll_step);
+          case 'downarrow' % decrease scroll step
+            scroll_step = getappdata(h_fig,'scroll_step');
+            if(scroll_step>1)
+                scroll_step = scroll_step-1;
+                setappdata(h_fig,'scroll_step',scroll_step);
+            end
+          case 'c' % imcontrast
+            imcontrast(h_img);
+          case 'm' % move
+            mode_move();
+          case 'p' % roip
+            mode_roip();
+          case 'r' % roir
+            mode_roir();
+          case 'a' % roia
+            mode_roia();
+          case 'd' % delete roi
+            modifier = lower(evt.Modifier);
+            if isempty(modifier)
+                if strcmp(cur_mode,'roip')
+                    delete_point();
+                elseif strcmp(cur_mode,'roia')
+                    delete_arrow();
+                elseif strcmp(cur_mode,'roir')
+                    delete_rect();
+                end
+            else
+                if strcmp(modifier,'control')
+                    if strcmp(cur_mode,'roip')
+                        delete_all_points();
+                    elseif strcmp(cur_mode,'roia')
+                        delete_all_arrows();
+                    elseif strcmp(cur_mode,'roir')
+                        delete_all_rects();
+                    end
+                end
+            end
+          case 'e' % export rois
+            export_var();
+          case 'q' % quit
+            close(h_obj);
+          case 'slash' % kymograph
+            if strcmp(cur_mode,'roia')
+                op_kymograph();
+            end
+          case 'k' % operation
+            modifier = lower(evt.Modifier);
+            if isempty(modifier)
+                if strcmp(cur_mode,'roip')
+                    op_on_point();
+                elseif strcmp(cur_mode,'roia')
+                    op_on_arrow();
+                elseif strcmp(cur_mode,'roir')
+                    op_on_rect();
+                end
+            else
+                if strcmp(modifier,'shift')
+                    if strcmp(cur_mode,'roip')
+                        op_on_all_points();
+                    elseif strcmp(cur_mode,'roia')
+                        op_on_all_arrows();
+                    elseif strcmp(cur_mode,'roir')
+                        op_on_all_rects();
+                    end
+                end
+            end
+          otherwise
+            % disp(evt.Key);
+        end
+    end
+
+    %% AUXILLARY FUNCTIONS
+    function [d,ind] = calc_closest_point(x,y)
+        d = 0;
+        ind = 0; % 0 indicates NA
+        np = size(imgroi.p,2);
+        if np==0
+            return;
+        end
+        cur_frame = getappdata(h_fig,'cur_frame');
+        p = [x;y];
+        ps = imgroi.p(:,:,cur_frame);
+        d2 = bsxfun(@minus,ps,p);
+        d2 = sum(d2.^2,1);
+        [d,ind] = min(d2,[],2);
+        d = sqrt(d);
+        if isnan(d) || isnan(ind) || isinf(d) || isinf(ind)
+            d = 0;
+            ind = 0;
+        end
+    end
+    
+    function [d,ind,arrowend] = calc_closest_arrow(x,y)
+        d = 0;
+        ind = 0; % 0 indicates NA
+        arrowend = ''; % Start/Stop
+        na = size(imgroi.a,2);
+        if na==0
+            return;
+        end
+        cur_frame = getappdata(h_fig,'cur_frame');
+        p = [x;y];
+        ps = imgroi.a(:,:,cur_frame);
+        ps_1 = ps(1:2,:); % Start points
+        ps_2 = ps(3:4,:); % Stop points
+        % Start points
+        d2_1 = bsxfun(@minus,ps_1,p);
+        d2_1 = sum(d2_1.^2,1);
+        [d_1,ind_1] = min(d2_1,[],2);
+        % Stop points
+        d2_2 = bsxfun(@minus,ps_2,p);
+        d2_2 = sum(d2_2.^2,1);
+        [d_2,ind_2] = min(d2_2,[],2);
+        if d_1<d_2
+            d = d_1;
+            ind = ind_1;
+            arrowend = 'Start';
+        else
+            d = d_2;
+            ind = ind_2;
+            arrowend = 'Stop';
+        end
+        d = sqrt(d);
+        if isnan(d) || isnan(ind) || isinf(d) || isinf(ind)
+            d = 0;
+            ind = 0;
+        end
+    end
+    
+    function ind = calc_bounding_rect(x,y)
+        ind = 0; % 0 indicates NA
+        nr = size(imgroi.r,2);
+        if nr==0
+            return;
+        end
+        cur_frame = getappdata(h_fig,'cur_frame');
+        for ii = 1:nr
+            xywh = squeeze(imgroi.r(:,ii,cur_frame));
+            p1x = xywh(1);
+            p1y = xywh(2);
+            p2x = xywh(1)+xywh(3);
+            p2y = xywh(2)+xywh(4);
+            if x>=p1x && x<=p2x && y>=p1y && y<=p2y
+                ind = ii;
+                return;
+            end
+        end
+    end
+    
+    function add_point(x,y)
+        xy = repmat([x;y], [1 1 num_frames]);
+        imgroi.p(:,end+1,:)=xy;
+        update_point();
+    end
+    
+    function add_arrow(x1,y1,x2,y2) % p1 points to p2
+        xy = repmat([x1;y1;x2;y2], [1 1 num_frames]);
+        imgroi.a(:,end+1,:)=xy;
+        update_arrow();
+    end
+    
+    function add_rect(x,y,w,h)
+        xywh = repmat([x;y;w;h],[1 1 num_frames]);
+        imgroi.r(:,end+1,:)=xywh;
+        update_rect();
+    end
+    
+    function [x,y,w,h] = rect_line2roi(rectx,recty)
+        if isempty(rectx) || isempty(recty)
+            x=nan;y=nan;w=nan;h=nan;
+        else
+            x = min(rectx);
+            y = min(recty);
+            w = max(rectx)-x;
+            h = max(recty)-y;
+        end
+    end
+    
+    function delete_point()
+        if active_ind>0 && active_ind<=size(imgroi.p,2)
+            cur_frame = getappdata(h_fig,'cur_frame');
+            imgroi.p(:,active_ind,cur_frame) = nan;
+            set(lineroi.p{active_ind},'XData',[],'YData',[]);
+        end
+    end
+    
+    function delete_arrow()
+        if active_ind>0 && active_ind<=size(imgroi.a,2)
+            cur_frame = getappdata(h_fig,'cur_frame');
+            imgroi.a(:,active_ind,cur_frame) = nan;
+            set(lineroi.a{active_ind},'XData',[],'YData',[]);
+        end
+    end
+
+    function delete_rect()
+        if active_ind>0 && active_ind<=size(imgroi.r,2)
+            cur_frame = getappdata(h_fig,'cur_frame');
+            imgroi.r(:,active_ind,cur_frame) = nan;
+            set(lineroi.r{active_ind},'XData',[],'YData',[]);
+        end
+    end
+
+    function delete_all_points()
+        if active_ind>0 && active_ind<=size(imgroi.p,2)
+            for ii = 1:size(imgroi.p,2)
+                delete(lineroi.p{ii});
+            end
+            lineroi.p = cell(1,0);
+            imgroi.p(:,active_ind,:) = []; % remove the column
+            update_point();
+        end
+    end
+    
+    function delete_all_arrows()
+        if active_ind>0 && active_ind<=size(imgroi.a,2)
+            for ii = 1:size(imgroi.a,2)
+                delete(lineroi.a{ii});
+            end
+            lineroi.a = cell(1,0);
+            imgroi.a(:,active_ind,:) = [];
+            update_arrow();
+        end
+    end
+    
+    function delete_all_rects()
+        if active_ind>0 && active_ind<=size(imgroi.r,2)
+            for ii = 1:size(imgroi.r,2)
+                delete(lineroi.r{ii});
+            end
+            lineroi.r = cell(1,0);
+            imgroi.r(:,active_ind,:) = [];
+            update_rect();
+        end
+    end
+
+    %% -------- EXTENSION IS MADE HERE!!! --------------
+    function op_on_point()
+        if active_ind>0 && active_ind<=size(imgroi.p,2)
+            cur_frame = getappdata(h_fig,'cur_frame');
+            p0 = imgroi.p(:,active_ind,cur_frame);
+            [p,param] = op_localize_point(imgs(:,:,cur_frame),p0);
+            if sum(isnan(p))==0
+                imgroi.p(:,active_ind,cur_frame) = p;
+                update_point();
+            end
+        end
+    end
+    
+    function op_on_all_points()
+        disp('hello all points');
+    end
+    
+    function op_on_arrow()
+        if active_ind>0 && active_ind<=size(imgroi.a,2)
+            cur_frame = getappdata(h_fig,'cur_frame');
+            p0 = imgroi.a(:,active_ind,cur_frame);
+            p1 = p0(1:2);
+            p2 = p0(3:4);
+            [p,param] = op_localize_endpoint(...
+                imgs(:,:,cur_frame), ...
+                p1,p2);
+            if sum(isnan(p))==0
+                p1 = reshape(p,[2 1]);
+                p2 = p + ABL*[cos(param(4)+pi);...
+                              sin(param(4)+pi)];
+                imgroi.a(:,active_ind,cur_frame) = [p1;p2];
+                update_arrow();
+            end
+        end
+    end
+
+    function op_on_rect()
+        disp('hello rect');
+    end
+    
+    function op_on_all_arrows()
+        disp('hello all arrows');
+    end
+    
+    function op_on_all_rects()
+        disp('hello all rects');
+    end
+    
+    function op_kymograph()
+        if active_ind>0 && active_ind<=size(imgroi.a,2)
+            p0 = imgroi.a(:,active_ind,:);
+            tmp = p0-repmat(p0(:,1,1),[1 1 num_frames]);
+            if sum(abs(tmp(:)))>eps
+                warning(['line segments are different at differnt ' ...
+                       'frames, abort']);
+                return;
+            end
+            clear 'tmp';
+            p1 = [p0(1,1,1);p0(2,1,1)];
+            p2 = [p0(3,1,1);p0(4,1,1)];
+            kimg = kymograph(imgs,p1,p2,KYMO_N,KYMO_W);
+            figure;
+            imshow(kimg,[],'Border', 'tight');
+        end
+    end
+
+end

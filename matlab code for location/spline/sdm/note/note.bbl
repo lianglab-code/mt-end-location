@@ -1,0 +1,9 @@
+\begin{thebibliography}{WPL06}
+
+\bibitem[WPL06]{WPL2006}
+Wenping Wang, Helmut Pottmann, and Yang Liu.
+\newblock Fitting b-spline curves to point clouds by curvature-based squared
+  distance minimization.
+\newblock {\em ACM Transactions on Graphics}, 25(2):214--238, 2006.
+
+\end{thebibliography}

@@ -1,0 +1,13 @@
+r = 1; % window size
+s = 16; % image size
+g = rand(s,s);
+ng = s*s;
+
+g2 = filter_minmax_2d(g,'min',r);
+g3 = filter_minmax_2d(g,'max',r);
+
+figure;imshow(g,[0 1]);set(gca,'position',[0 0 1 1]);
+hold on;
+
+
+figure;imshow(g2,[0 1]);set(gca,'position',[0 0 1 1]);

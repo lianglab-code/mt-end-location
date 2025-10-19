@@ -1,0 +1,504 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+
+\DeclareMathOperator{\Tr}{Tr}
+%%%\DeclareMathOperator{\diag}{diag}
+\DeclarePairedDelimiter{\diagfences}{(}{)}
+\newcommand{\diag}{\operatorname{diag}\diagfences}
+\newcommand{\sd}{\mathcal{D}} % space D
+\newcommand{\bmmpp}{\bm{\mathcal{P_+}}} % curve
+\newcommand{\bmmp}{\bm{\mathcal{P}}} % curve
+\newcommand{\splinepk}{\sum_j{\beta_{jk}(\bm{P}_j+\bm{D}_j)}}
+\newcommand{\splinepx}{\sum_j{\beta_j(x)(\bm{P}_j+\bm{D}_j)}}
+\newcommand{\splinek}{\sum_j{\beta_{jk}\bm{P}_j}}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\vX}[1]{\bm{X}_{#1}} % vector
+\newcommand{\vN}[1]{\bm{N}_{#1}} % vector
+\newcommand{\vT}[1]{\bm{T}_{#1}} % vector
+\newcommand{\vTp}[1]{\bm{T^{\prime}}_{#1}} % vector
+\newcommand{\vP}[1]{\bm{\mathcal{P}}_{#1}} % vector
+\newcommand{\sP}[1]{\mathcal{P}_{#1}} % scalar
+\newcommand{\bitk}{\beta_i(t_k)}
+\newcommand{\bjtk}{\beta_j(t_k)}
+\newcommand{\mA}{\mathbf{A}} % matrix
+\newcommand{\mx}{\mathbf{x}} % matrix
+\newcommand{\mb}{\mathbf{b}} % matrix
+\newcommand{\mB}{\mathbf{B}} % matrix
+\newcommand{\mz}{\mathbf{0}} % matrix
+\newcommand{\mF}{\mathbf{F}} % matrix
+\newcommand{\mG}{\mathbf{G}} % matrix
+\newcommand{\mNx}{\mathbf{N_x}} % matrix
+\newcommand{\mNy}{\mathbf{N_y}} % matrix
+\newcommand{\mTpx}{\mathbf{T^{\prime}_x}} % matrix
+\newcommand{\mTpy}{\mathbf{T^{\prime}_y}} % matrix
+\newcommand{\mDx}{\mathbf{D_x}} % matrix
+\newcommand{\mDy}{\mathbf{D_y}} % matrix
+\newcommand{\mHx}{\mathbf{H_x}} % matrix
+\newcommand{\mHy}{\mathbf{H_y}} % matrix
+\newcommand{\rhs}{\mathrm{RHS}}
+\newcommand{\lhs}{\mathrm{LHS}}
+\renewcommand{\b}[1]{\beta_{#1}}
+
+\begin{document}
+ 
+\title{Matrix representation of the linear system encountered in the least-squares minimization}
+\author{jerviedog}
+\maketitle
+
+\section{Introduction}
+This is a short summary of the derivation of the linear system encountered in the linear least-square minimization problem. Specifically, we want to adjust the curve $\bmmpp=\splinepx$ to minimize the distance from the point cloud to the curve. The displacements of the control points $\sd=\{\bm{D}\}$ are the optimization variables. The result can also be used to the optimization problem of similar form.
+
+\section{TDM}
+The minimization problem is \\
+\[
+\min_{\sd}{f(\sd)} = \min_{\sd}{\sum_k{e_k(\sd)}},
+\]
+where 
+\[
+\begin{split}
+e_k(\sd) &= e_{TD,k}(\sd) \\
+&= \half\big[(\bmmpp(t_k)-\vX{k})^T\vN{k}\big]^2 \\
+&= \half\Bigl[(\splinepk-\vX{k})^T\vN{k}\Bigr]^2,
+\end{split}
+\]
+and
+\[
+\b{jk}=\bjtk.
+\]
+ 
+In two-dimensional cases, the control point $\bm{P}_j = (P_{jx},P_{jy})^T$, and the displacement of the control point $\bm{D}_j = (D_{jx},D_{jy})^T$.
+
+Suppose that there are $n$ sample points in the point cloud, and $m$ control points. Minimizing $f(\sd)$ leads to 
+\[
+\frac{\partial{f}}{\partial{D_{ix}}} = 0
+\]
+and
+\[
+\frac{\partial{f}}{\partial{D_{iy}}} = 0.
+\]
+
+Because $f(\sd)$ is linear sum of squares, the minimization of $f(\sd)$ would give us a linear system $\mA\mx=\mb$, the solution of which is the solution of the original optimization problem.
+
+Below is the derivation of such linear system.
+
+First, $f(\mathcal{D})$ can be rewritten as: 
+\[
+\begin{split}
+f(\sd) &= \sum_{k=1}^n{e_k(\sd)} \\
+&= \half\sum_{k=1}^n{\big[(\bmmpp(t_k)-\vX{k})^T\vN{k}\big]^2} \\
+&= \half\sum_{k=1}^n{\big[(\bmmpp(t_k)^T\vN{k})^2-2(\bmmpp(t_k)^T\vN{k})(\vX{k}^T\vN{k})+(\vX{k}^T\vN{k})^2\big]}.
+%%% &= \half\sum_{k=1}^n{ \Biggl\{\Bigl[(\splinepk)^T\vN{k}\Bigr]^2-2\Bigl[(\splinepk)^T\vN{k}\Bigr](\vX{k}^T\vN{k})+(\vX{k}^T\vN{k})^2\Biggr\} }
+\end{split}
+\]
+
+The derivative of $\bmmpp(t_k)$ with respect to $D_{ix}$ and $D_{iy}$ are 
+\[
+\frac{\partial\bmmpp(t_k)}{\partial D_{ix}}=\b{ik} \binom 10,
+\]
+and
+\[
+\frac{\partial\bmmpp(t_k)}{\partial D_{ix}}=\b{ik} \binom 01.
+\]
+
+
+The derivative of $\bmmpp(t_k)^T\vN{k}$ with respect to $D_{ix}$ and $D_{iy}$ are 
+\[
+\frac{\partial\bmmpp(t_k)^T\vN{k}}{\partial D_{ix}}=\b{ik} N_{kx},
+\]
+and
+\[
+\frac{\partial\bmmpp(t_k)^T\vN{k}}{\partial D_{iy}}=\b{ik} N_{ky}.
+\]
+
+Then the derivative of $f$ with respect to $D_{ix}$ and $D_{iy}$ are 
+\[
+\begin{split}
+\frac{\partial f}{\partial D_{ix}} &= \sum_k{\Bigl[ \b{ik} N_{kx}\bmmpp(t_k)^T\vN{k} - \b{ik} N_{kx}(\vX{k}^T\vN{k}) \Bigr]} \\
+&= \sum_k{\Biggl\{ \b{ik} N_{kx}\Bigl[\splinepk\Bigr]^T\vN{k} - \b{ik} N_{kx}(\vX{k}^T\vN{k}) \Biggr\} },
+\end{split}
+\]
+and
+\[
+\begin{split}
+\frac{\partial f}{\partial D_{iy}} &= \sum_k{\Bigl[ \b{ik} N_{ky}\bmmpp(t_k)^T\vN{k} - \b{ik} N_{ky}(\vX{k}^T\vN{k}) \Bigr]} \\
+&= \sum_k{\Biggl\{ \b{ik} N_{ky}\Bigl[\splinepk\Bigr]^T\vN{k} - \b{ik} N_{ky}(\vX{k}^T\vN{k}) \Biggr\} }.
+\end{split}
+\]
+
+$\partial f/\partial D_{ix}=0$ result in the first $m$ equations, while $\partial f/\partial D_{iy}=0$ lead to the other $m$ equations. We next would like to rewrite these equations in the form of $\mA\mx=\mb$.
+
+For the $i$th equation, that is, $\partial f/\partial D_{ix}=0,$
+\[
+\begin{split}
+\lhs &= \sum_k{ \Bigl\{ \b{ik} N_{kx} \Bigl[ \sum_j(\b{jk}(D_{jx}N_{kx}+D_{jy}N_{ky})) \Bigr] \Bigr\} } \\
+&= \sum_j{\sum_k{\b{ik}\b{jk} N_{kx}N_{kx}D_{jx}}} + \sum_j{\sum_k{\b{ik}\b{jk} N_{kx}N_{ky}D_{jy}}} \\
+\rhs &= \sum_k{ \Bigl\{ \b{ik} N_{kx} \bigl[ (\vX{k}-\vP{k})^T\vN{k} \bigr] \Bigr\} }.
+\end{split}
+\]
+Note that here $\vP{k}=\splinek$.
+
+For the $i+m$th equation, that is, $\partial f/\partial D_{iy}=0,$
+\[
+\begin{split}
+\lhs &= \sum_k{ \Bigl\{ \b{ik} N_{ky} \Bigl[ \sum_j(\b{jk}(D_{jx}N_{kx}+D_{jy}N_{ky})) \Bigr] \Bigr\} } \\
+&= \sum_j{\sum_k{\b{ik}\b{jk} N_{kx}N_{ky}D_{jx}}} + \sum_j{\sum_k{\b{ik}\b{jk} N_{ky}N_{ky}D_{jy}}} \\
+\rhs &= \sum_k{ \Bigl\{ \b{ik} N_{ky} \bigl[ (\vX{k}-\vP{k})^T\vN{k} \bigr] \Bigr\} }.
+\end{split}
+\]
+
+Blah, blah, blah, at last, a matrix form $\mA\mx=\mb$ is obtained:
+\[
+\begin{split}
+\lhs &= 
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}^T
+\begin{pmatrix}
+\mNx & \mz \\
+\mz & \mNy
+\end{pmatrix}
+\begin{pmatrix}
+\mNx & \mNy \\
+\mNx & \mNy
+\end{pmatrix}
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}
+\begin{pmatrix}
+\mDx \\
+\mDy 
+\end{pmatrix},\\
+\rhs &=
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}^T
+\begin{pmatrix}
+\mNx & \mz \\
+\mz & \mNy
+\end{pmatrix}
+\begin{pmatrix}
+\mF \\
+\mF 
+\end{pmatrix},
+\end{split}
+\]
+where
+\[
+\begin{split}
+\mB &= 
+\begin{pmatrix}
+\b{11} & \dots & \b{m1} \\
+\vdots & \ddots & \vdots \\
+\b{1n} & \dots & \b{mn}
+\end{pmatrix}_{n\times m},\\
+\mNx &=
+\diag{N_{1x},\dots,N_{nx}}_{n\times n},\\
+\mNy &=
+\diag{N_{1y},\dots,N_{ny}}_{n\times n},\\
+\mDx &= (D_{1x},\dots,D_{mx})^T,\\
+\mDy &= (D_{1y},\dots,D_{my})^T,\\
+\mF &= \bigl((\vX{1}-\vP{1})^T\vN{1},\dots,(\vX{n}-\vP{n})^T\vN{n}\bigr)^T.
+\end{split}
+\]
+
+\section{SDM}
+The error term in SDM is similar to that in TDM. In SDM,
+\[
+\begin{split}
+e_k(\sd) &= e_{SD,k}(\sd) \\
+&= \half\frac{d_k}{d_k-\rho_k}\big[(\bmmpp(t_k)-\vX{k})^T\vT{k}\big]^2 + \half\big[(\bmmpp(t_k)-\vX{k})^T\vN{k}\big]^2.
+\end{split}
+\]
+The forms of the two parts are similar. If we define $\vTp{k}=\sqrt{\frac{d_k}{d_k-\rho_k}}\vT{k}$, we can simplify the error term as:
+\[
+e_k(\sd) = \half\big[(\bmmpp(t_k)-\vX{k})^T\vTp{k}\big]^2 + \half\big[(\bmmpp(t_k)-\vX{k})^T\vN{k}\big]^2.
+\]
+The minimization of $f(\sd)$ leads to a linear system as below.
+\[
+\begin{split}
+\lhs &= 
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}^T
+\Biggl[
+\begin{pmatrix}
+\mNx & \mz \\
+\mz & \mNy
+\end{pmatrix}
+\begin{pmatrix}
+\mNx & \mNy \\
+\mNx & \mNy
+\end{pmatrix}
++
+\begin{pmatrix}
+\mTpx & \mz \\
+\mz & \mTpy
+\end{pmatrix}
+\begin{pmatrix}
+\mTpx & \mTpy \\
+\mTpx & \mTpy
+\end{pmatrix}
+\Biggr]
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}
+\begin{pmatrix}
+\mDx \\
+\mDy 
+\end{pmatrix},\\
+\rhs &=
+\begin{pmatrix}
+\mB & \mz \\
+\mz & \mB
+\end{pmatrix}^T
+\Biggl[
+\begin{pmatrix}
+\mNx & \mz \\
+\mz & \mNy
+\end{pmatrix}
+\begin{pmatrix}
+\mF \\
+\mF 
+\end{pmatrix}
++
+\begin{pmatrix}
+\mTpx & \mz \\
+\mz & \mTpy
+\end{pmatrix}
+\begin{pmatrix}
+\mG \\
+\mG 
+\end{pmatrix}
+\Biggr],
+\end{split}
+\]
+where
+\[
+\begin{split}
+\mTpx &=
+\diag{\sqrt{\frac{d_1}{d_1-\rho_1}}T_{1x},\dots,\sqrt{\frac{d_n}{d_n-\rho_n}}T_{nx}}_{n\times n},\\
+\mTpy &=
+\diag{\sqrt{\frac{d_1}{d_1-\rho_1}}T_{1y},\dots,\sqrt{\frac{d_n}{d_n-\rho_n}}T_{ny}}_{n\times n},\\
+\mG &= \bigl((\vX{1}-\vP{1})^T\vTp{1},\dots,(\vX{n}-\vP{n})^T\vTp{n}\bigr)^T.
+\end{split}
+\]
+
+\section{PDM}
+In PDM, the error term is:
+\[
+\begin{split}
+e_k(\sd) &= e_{PD,k}(\sd) \\
+&= \half\Bigl\Vert{\bmmpp(t_k)-\vX{k}}\Bigr\Vert_2^2 \\
+&= \half(\bmmpp(t_k)-\vX{k})^T(\bmmpp(t_k)-\vX{k}) \\
+&= \half\bmmpp(t_k)^T\bmmpp(t_k)-\bmmpp(t_k)^T\vX{k}+\half\vX{k}^T\vX{k}.
+\end{split}
+\]
+
+The minimization of $f(\sd)$ results in two separate linear systems:
+\[
+\begin{split}
+\mB^T\mB\mDx &= \mB^T\mHx,\\
+\mB^T\mB\mDy &= \mB^T\mHy,
+\end{split}
+\]
+where
+\[
+\begin{split}
+\mHx &= (X_{1x}-\sP{1x},\dots,X_{nx}-\sP{nx})^T,\\
+\mHy &= (X_{1y}-\sP{1y},\dots,X_{ny}-\sP{ny})^T.
+\end{split}
+\]
+
+\section{Internal energy terms}
+The internal energy terms are the integrals of the first and second derivatives of the curve:
+\[
+F_1 = \int {\|P^\prime_D(t)\|^2 }dt
+\]
+and
+\[
+F_2 = \int{\|P^{\prime\prime}_D(t)\|^2}dt .
+\]
+
+Eventually, the evaluation of the integration of the form $\int{\b{ik}\b{jk}}dt$ is needed. Here, I focus on the special case of cardinal spline basis. It seems that there would be no explicit/analytical form of these integrals.
+
+
+\section{Appendix}
+Some useful relations are listed here, in case I forget the derivation process.
+
+\subsection{matrix manipulation}
+\begin{align*}
+&\mathrel{\phantom{=}}\sum_j^m{\sum_k^n{\b{ik}\b{jk}N_kM_kD_{jx}}} \notag \\
+&= 
+\begin{pmatrix}
+\b{i1}N_1M_1 & \dots & \b{in}N_nM_n
+\end{pmatrix}
+\mB
+\begin{pmatrix}
+D_{1x} \\
+\vdots \\
+D_{mx}
+\end{pmatrix}
+\end{align*}
+
+\begin{align*}
+&\mathrel{\phantom{=}}
+\begin{pmatrix}
+\b{11}N_{1x}N_{1y} & \dots & \b{1n}N_{nx}N_{ny} \\
+\vdots & \ddots & \vdots \\
+\b{m1}N_{1x}N_{1y} & \dots & \b{mn}N_{nx}N_{ny}
+\end{pmatrix} \notag \\
+&=\mB^T\cdot\diag{N_{1x},\dots,N_{nx}}\cdot\diag{N_{1y},\dots,N_{ny}}
+\end{align*}
+
+\subsection{manipulation of cardinal splines}
+For cardinal splines $\$_{j,k,\mathbb{Z}}$, there is only one ``unique'' spline for a given order $k$; all other cardinal splines of order $k$ can be generated by translating the one that spans $\mathopen[0,k+1\mathclose)$. I denotes these ``unique'' cardinal splines as $Q_k$ of order $k$. I list the cardinal splines up to order $4$.
+
+\[
+\begin{split}
+Q_1 &= 
+\begin{cases}
+1 & 0 \leq x < 1\\
+0 & otherwise
+\end{cases}, \\
+Q_2 &= 
+\begin{cases}
+x & 0 \leq x < 1 \\
+-(x-1)+1 & 1 \leq x < 2\\
+0 & otherwise
+\end{cases}, \\
+Q_3 &= 
+\begin{cases}
+\frac{1}{2}x^2 & 0 \leq x < 1 \\
+-(x-1)^2+(x-1)+\frac{1}{2} & 1 \leq x < 2\\
+\frac{1}{2}(x-2)^2-(x-2)+\frac{1}{2} & 2 \leq x < 3\\
+0 & otherwise
+\end{cases}, \\
+Q_4 &= 
+\begin{cases}
+\frac{1}{6}x^3 & 0 \leq x < 1 \\
+-\frac{1}{2}(x-1)^3+\frac{1}{2}(x-1)^2+\frac{1}{2}(x-1)+\frac{1}{6} & 1 \leq x < 2\\
+\frac{1}{2}(x-2)^3-(x-2)^2+\frac{2}{3} & 2 \leq x < 3\\
+-\frac{1}{6}(x-3)^3+\frac{1}{2}(x-3)^2-\frac{1}{2}(x-3)+\frac{1}{6} & 3 \leq x < 4\\
+0 & otherwise
+\end{cases}.
+\end{split}
+\]
+
+The derivative of the $Q_k$ is: 
+\[
+Q_{i,k}^{\prime} = Q_{i,k-1}-Q_{i+1,k-1},
+\]
+where
+\[
+Q_{i,k} = Q_k(x-i),
+\]
+e.g., $Q_{i,k}$ is a translate of $Q_k$.
+
+Suppose that a order $k$ b-spline curve with cardinal basis $Q_j$ is given: $\bmmp=\sum_{j=1}^m\bm{P}_jQ_j$. The first and second derivatives of $\bmmp$ with respect to x are:
+
+\[
+\begin{split}
+\bmmp^{\prime} &= \sum_{j=1}^{m+1}[Q_{j,k-1}(\bm{P}_j-\bm{P}_{j-1})], \\
+\bmmp^{\prime\prime} &= \sum_{j=1}^{m+2}[Q_{j,k-2}(\bm{P}_j-2\bm{P}_{j-1}+\bm{P}_{j-2})]. \\
+\end{split}
+\]
+
+For open curves, 
+\[
+\bm{P}_j=0, j \notin [1,m],
+\]
+while for closed curves, 
+\[
+\bm{P}_j = \bm{P}_{j \bmod m}, j \notin [1,m].
+\]
+
+The derivatives of $\bmmp_+^{\prime}$ and $\bmmp_+^{\prime\prime}$ with respect to $D_{ix}$ and $D_{iy}$ are:
+\[
+\begin{split}
+\frac{\partial{\bmmp_+^{\prime}}}{\partial{D_{ix}}}
+&= [Q_{i,k-1}-Q_{i+1,k-1} , 0]^T \\
+\frac{\partial{\bmmp_+^{\prime}}}{\partial{D_{iy}}}
+&= [0 , Q_{i,k-1}-Q_{i+1,k-1}]^T \\
+\frac{\partial{\bmmp_+^{\prime\prime}}}{\partial{D_{ix}}}
+&= [Q_{i,k-2}-2Q_{i+1,k-2}+Q_{i+2,k-2} , 0]^T \\
+\frac{\partial{\bmmp_+^{\prime\prime}}}{\partial{D_{iy}}}
+&= [0 , Q_{i,k-2}-2Q_{i+1,k-2}+Q_{i+2,k-2}]^T.
+\end{split}
+\]
+
+For open curves, 
+\[
+Q_j=0, j \notin [1,m],
+\]
+while for closed curves, 
+\[
+Q_j = Q_{j \bmod m}, j \notin [1,m].
+\]
+
+
+Two regularization terms ($F_1$ and $F_2$) are added in cost function $f$ to control the smoothness of the b-spline curves:
+\[
+\begin{split}
+F_1 &= \half\int_{\bmmp}{\|\bmmp^{\prime}\|^2}dt ,\\
+F_2 &= \half\int_{\bmmp}{\|\bmmp^{\prime\prime}\|^2}dt .
+\end{split}
+\]
+
+Now we calculate the partial derivative of $F_1$ with respect to $D_{ix}$ and $D_{iy}$:
+\[
+\begin{split}
+\frac{\partial{F_1}}{\partial{D_{ix}}}
+&= \frac{\partial}{\partial{D_{ix}}}\half\int({{P_{x+}^{\prime}}^2+{P_{y+}^{\prime}}^2})dt \\
+&= \half\int\frac{\partial}{\partial{D_{ix}}}({P_{x+}^{\prime}}^2+{P_{y+}^{\prime}}^2)dt \\
+&= \int(P^{\prime}_{x+}\cdot \frac{\partial{P^{\prime}_{x+}}}{\partial{D_{ix}}} + P^{\prime}_{y+}\cdot \frac{\partial{P^{\prime}_{y+}}}{\partial{D_{ix}}})dt ,
+\end{split}
+\]
+where
+\[
+P_{x+} = \sum_{j=1}^m(P_{jx}+D_{jx})Q_{j,k},
+\]
+\[
+P_{y+} = \sum_{j=1}^m(P_{jy}+D_{jy})Q_{j,k},
+\]
+\[
+\frac{\partial{P^{\prime}_{x+}}}{\partial{D_{ix}}} = Q_{i,k-1}-Q_{i+1,k-1}
+\]
+and
+\[
+\frac{\partial{P^{\prime}_{y+}}}{\partial{D_{ix}}} = 0.
+\]
+
+After simplify the above equation, we have
+\[
+\begin{split}
+\frac{\partial{F_1}}{\partial{D_{ix}}}
+&= \int(P^{\prime}_{x+}\cdot \frac{\partial{P^{\prime}_{x+}}}{\partial{D_{ix}}} + P^{\prime}_{y+}\cdot \frac{\partial{P^{\prime}_{y+}}}{\partial{D_{ix}}})dt \\
+&= \int(P^{\prime}_{x+}\cdot \frac{\partial{P^{\prime}_{x+}}}{\partial{D_{ix}}})dt \\
+&= \sum_{j=1}^{m+1}\Biggl\{\Bigl[(P_{jx}+D_{jx})-(P_{j-1,x}+D_{j-1,x})\Bigr] \cdot \int\Bigl[Q_{j,k-1}(Q_{i,k-1}-Q_{i+1,k-1})\Bigr]dt\Biggr\}.
+\end{split}
+\]
+
+Similarly, we have
+\[
+\begin{split}
+\frac{\partial{F_1}}{\partial{D_{iy}}}
+&= \sum_{j=1}^{m+1}\Biggl\{\Bigl[(P_{jy}+D_{jy})-(P_{j-1,y}+D_{j-1,y})\Bigr] \cdot \int\Bigl[Q_{j,k-1}(Q_{i,k-1}-Q_{i+1,k-1})\Bigr]dt\Biggr\}, \\
+\frac{\partial{F_2}}{\partial{D_{ix}}}
+&= \sum_{j=1}^{m+2}\Biggl\{\Bigl[(P_{jx}+D_{jx})-2(P_{j-1,x}+D_{j-1,x})+(P_{j-2,x}+D_{j-2,x})\Bigr] \\
+&\mathrel{\phantom{=}}\quad\quad\quad\cdot \int\Bigl[Q_{j,k-2}(Q_{i,k-2}-2Q_{i+1,k-2}+Q_{i+2,k-2})\Bigr]dt\Biggr\}, \\
+\frac{\partial{F_2}}{\partial{D_{iy}}}
+&= \sum_{j=1}^{m+2}\Biggl\{\Bigl[(P_{jy}+D_{jy})-2(P_{j-1,y}+D_{j-1,y})+(P_{j-2,y}+D_{j-2,y})\Bigr] \\
+&\mathrel{\phantom{=}}\quad\quad\quad\cdot \int\Bigl[Q_{j,k-2}(Q_{i,k-2}-2Q_{i+1,k-2}+Q_{i+2,k-2})\Bigr]dt\Biggr\}.
+\end{split}
+\]
+
+\end{document}
