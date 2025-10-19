@@ -1,0 +1,47 @@
+#+title: Specifications ROI/POI Module
+
+* notes:
+** MATLAB'S built-in imroi tools (/opt/MATLAB/R2014a/toolbox/images/imuitools) are great!
+** However, I would like to implement my own.
+** ROI, IMO, would serve two roles in two applications: segmentation and analysis. Howerer, after reading Sonka's textbook on image processing, I think I mixed image representation on two level: segmentation level and analysis level. As a result, I think I should divide the ROIs into two class: segmentation level and analysis level. Oh, how silly I am! All ROIs mentioned here belong to the segmentation level. 
+
+* types:
+** line (POI)
+** polyline (POI)
+** curve (POI)
+** rectangle (ROI)
+** ellipse (ROI)
+** polygon (ROI)
+** free-region (ROI) (just like imfreehand)
+
+* common properties:
+** internal representation
+*** ellipse: [x y a b]
+*** rectangle: [x y w h]
+*** polygon: [x; y]
+*** line: [p0, p1]
+*** polyline: [x; y]
+*** curve: b-spline
+*** free-region: [x; y]
+** GUI representation:
+*** all are represented by [x; y]
+** line width
+** movable: free-region is non-movable
+
+* operations:
+** plottint methods:
+*** get_pos: [min_x, min_y, width, height]
+*** free-region painting (just like the painting tool in Amira)
+** interaction
+*** mouse clicking
+**** move the whole shape
+**** shape modification:
+***** xy adjustment
+***** b-spline control point adjustment
+***** b-spline extension
+** ROI/POI management:
+*** add
+*** remove
+*** union
+*** intersection
+*** erosion/dilation

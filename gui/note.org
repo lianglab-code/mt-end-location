@@ -1,0 +1,40 @@
+#+title: notes on the matlab gui designs or functions
+#+date: 2017-12-08
+
+* design principles
+** minimal side effect principle
+*** to determine what the routine would change
+*** to restore the infromation while existing
+** TODO efficiency
+
+* objects
+** hierarchy
+** figure
+** axes
+*** xlim/ylim % the shown area
+*** position % axes pos in the parent figure
+
+* callbacks
+** ButtonDownFcn
+** ButtonUpFcn
+** ButtonMotionFcn
+** WindowButtonDownFcn
+** WindowButtonUpFcn
+** WindowButtonMotionFcn
+
+* functions
+** get
+*** get(handle) % get all properties of a graphic handle
+** set
+** setappdata % set the userdata of the graphic handle
+** getappdata % getappdata(obj) returns all appdata
+** gcbf % get current callback figure handle
+** findall
+** findobj
+** isgraphic % isgraphic(obj) or isgraphic(obj,'axes')
+
+* other
+** renderer
+*** zbuffer
+*** painters
+*** opengl

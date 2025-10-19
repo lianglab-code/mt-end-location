@@ -1,0 +1,8 @@
+function masked = helper_maskout(src,mask)
+% src: 
+% https://cn.mathworks.com/matlabcentral/answers/38547-masking-out-image-area-using-binary-mask
+% mask: binary, same size as src, but does not have to be same data type (int vs logical)
+% src: rgb or gray image
+mask = 1-mask;
+masked = bsxfun(@times, src, cast(mask,class(src)));
+end

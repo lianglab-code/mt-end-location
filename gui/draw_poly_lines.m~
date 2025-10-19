@@ -1,0 +1,152 @@
+function draw_poly_lines
+%% DRAW_POLY_LINES draws multiple-segment line
+% Behavior:
+% * drawline pbutt enables drawing
+% * addline pbutt adds the line
+% * done pbutt finishs the whole process and close the figure
+    
+% Variables:
+    img = imread('cameraman.tif');
+    points = []; % points array
+    clickable = 0; % enable mouse operation
+    is_clicked = 0; % flag for the first left click
+    
+    h_main_fig = figure( ...
+        'Name', 'Draw Line', ...
+        'Visible','off', ...
+        'Position',[1 1 1100 800], ...
+        'Units', 'pixels', ...
+        'Menubar','none', ...
+        'Resize','off');
+    set(h_main_fig, ...
+        'windowbuttondownfcn', '', ...
+        'windowbuttonmotionfcn', '', ...
+        'windowbuttonupfcn', '');
+    
+    % Initialization
+    % Construct the components.
+    % 1. Axes
+    h_img_axes = axes( ...
+        'Parent', h_main_fig, ...
+        'Units', 'pixels', ...
+        'Position', [50 150 800 600], ...
+        'userdata', []);
+    set(h_img_axes, 'xtick', [], 'ytick', []); 
+    imshow(img, 'Parent', h_img_axes);
+    axis(h_img_axes, 'manual');
+    
+    h_line_axes = axes( ...
+        'Parent', h_main_fig, ...
+        'Units', 'pixels', ...
+        'Position', [50 150 800 600], ...
+        'Color', 'none', ...
+        'XLim', get(h_img_axes, 'XLim'), ...
+        'YLim', get(h_img_axes, 'YLim'), ...
+        'ZLim', get(h_img_axes, 'ZLim'), ...
+        'XDir', get(h_img_axes, 'XDir'), ...
+        'YDir', get(h_img_axes, 'YDir'), ...
+        'DataAspectRatio', get(h_img_axes, 'DataAspectRatio'), ...
+        'DataAspectRatioMode', get(h_img_axes, 'DataAspectRatioMode'), ...
+        'userdata', []);
+    % lines: the MTs
+    % rects: the expanded MT ROI
+    % cl: current line and current start point
+    set(h_line_axes, 'xtick', [], 'ytick', []); 
+    axis(h_line_axes, 'manual');
+
+        
+    % 3. Toggle Button - DrawLine
+    h_drawline_pbutton = uicontrol( ...
+        'Parent', h_main_fig, ...
+        'Style', 'pushbutton', ...
+        'String', 'DrawLine', ...
+        'position', [920, 620, 80, 50], ...
+        'Callback', @h_drawline_pbutton_Callback);
+
+    % 4. Button - AddLine
+    h_addline_pbutton = uicontrol( ...
+        'Parent', h_main_fig, ...
+        'Style', 'pushbutton', ...
+        'String', 'AddLine', ...
+        'Position', [920, 560, 80, 50], ...
+        'Callback', @h_addline_pbutton_Callback);
+
+    % 5. Button - Done
+    h_done_pbutton = uicontrol( ...
+        'Parent', h_main_fig, ...
+        'Style', 'pushbutton', ...
+        'String', 'Done', ...
+        'Position', [920, 500, 80, 50], ...
+        'Callback', @h_done_pbutton_Callback);
+    
+    % Display the main window
+    set(h_main_fig, 'Name', 'Draw Line');
+    movegui(h_main_fig, 'center');
+    set(h_main_fig, 'Visible', 'on');
+
+    function h_drawline_pbutton_Callback(src, evt)
+    % clear the points array
+        points = [];
+        h_lines = get(h_line_axes, 'userdata');
+        if(~isempty(h_lines))
+            for i = 1:numel(h_lines)
+                delete(h_lines(i));
+            end
+            h_lines = [];
+            set(h_line_axes, 'userdata', []);
+        end
+        set(h_main_fig, 'windowbuttondownfcn', @fig_button_down);
+    end
+    
+    function fig_button_down(src, evt)
+        set(h_drawline_pbutton, 'Enable', 'off');
+        set(h_addline_pbutton, 'Enable', 'off');
+        set(h_done_pbutton, 'Enable', 'off');
+        seltype = get(src, 'SelectionType');
+        if strcmp(seltype, 'normal')
+            set(h_main_fig, 'windowbuttonupfcn', @fig_button_up);
+        elseif strcmp(seltype, 'open')
+            num_points = numel(points);
+            if(num_points==0)
+                set(h_addline_pbutton, 'Enable', 'off');
+            end
+            set(h_main_fig, 'windowbuttondownfcn','');
+            set(h_drawline_pbutton, 'Enable', 'on');
+            set(h_addline_pbutton, 'Enable', 'on');
+            set(h_done_pbutton, 'Enable', 'on');
+        end
+    end
+    
+    function fig_button_up(src, evt)
+        p_axes = get(h_img_axes, 'CurrentPoint');
+        p = p_axes(1,1) + p_axes(1,2)*sqrt(-1) % current point
+        h_lines = get(h_line_axes, 'userdata');
+        num_points = numel(points);
+        if(num_points == 0)
+            h_lines(1) = line('XData',real(p),'YData',imag(p), ...
+                              'Marker', 'p', ...
+                              'color', 'b' ...
+                              );
+        else
+            xdat = [real(points(num_points)), real(p)];
+            ydat = [imag(points(num_points)), imag(p)];
+            set(h_lines(num_points), 'XData', xdat);
+            set(h_lines(num_points), 'YData', ydat);
+            h_lines(num_points+1) = line('XData',real(p),'YData',imag(p), ...
+                                         'Marker','p', ...
+                                         'color', 'b');
+        end
+        points(num_points+1) = p;
+        set(h_main_fig, 'windowbuttonupfcn', '');
+        set(h_line_axes, 'userdata', h_lines);
+    end
+
+    function h_addline_pbutton_Callback(src, evt)
+        points
+    end
+
+    function h_done_pbutton_Callback(src, evt)
+        close(h_main_fig);
+    end
+    
+end

@@ -1,0 +1,8 @@
+#+title: TODO
+
+* DONE to show a circle on a picture
+** the circle will move along the mouse
+** it seems rectangle is better than circle!!!
+
+* to write down the specifications for the ROI manipulation and management
+** 
